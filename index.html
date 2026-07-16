@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Timer de Treino</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg: #050816;
+            --card-bg: #0f172a;
+            --accent: #38bdf8;
+            --accent-soft: rgba(56, 189, 248, 0.2);
+            --text: #e5e7eb;
+            --text-muted: #9ca3af;
+            --danger: #f97373;
+            --success: #4ade80;
+            --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: var(--font-main);
+            background: radial-gradient(circle at top, #0f172a 0, #020617 45%, #000 100%);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 480px;
+            background: linear-gradient(145deg, #020617, #0b1220);
+            border-radius: 24px;
+            padding: 20px 18px 24px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(148, 163, 184, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app::before {
+            content: "";
+            position: absolute;
+            inset: -40%;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.18) 0, transparent 55%),
+                radial-gradient(circle at 100% 100%, rgba(129, 140, 248, 0.18) 0, transparent 55%);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .app-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 0;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+        }
+
+        .config-card {
+            border-radius: 18px;
+            padding: 14px 12px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .field input {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            padding: 6px 10px;
+            font-size: 0.9rem;
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text);
+            outline: none;
+        }
+
+        .field input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
+        }
+
+        .hint {
+            margin-top: 6px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .status-card {
+            margin-top: 10px;
+            border-radius: 18px;
+            padding: 14px 12px 16px;
+            background: radial-gradient(circle at top, rgba(56, 189, 248, 0.18), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .status-label {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .status-value {
+            font-weight: 600;
+        }
+
+        .status-mode {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-mode.work {
+            color: var(--success);
+        }
+
+        .status-mode.rest {
+            color: var(--accent);
+        }
+
+        .status-mode.idle {
+            color: var(--text-muted);
+        }
+
+        .timer-display {
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .time-main {
+            font-size: 8rem;
+            font-weight: 300;
+            letter-spacing: 0.01rem;
+        }
+
+        .time-main span {
+            display: inline-block;
+            min-width: 2ch;
+            text-align: center;
+        }
+
+        .time-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .progress-bar {
+            margin-top: 10px;
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.9);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), #a855f7);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+            transition: width 0.2s linear;
+        }
+
+        .controls {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        button {
+            border-radius: 999px;
+            border: none;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #0ea5e9);
+            color: #0b1120;
+            box-shadow: 0 12px 24px rgba(56, 189, 248, 0.45);
+        }
+
+        .btn-secondary {
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+        }
+
+        .btn-danger {
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(248, 113, 113, 0.6);
+        }
+    </style>
+
+    <head>
+        <link rel="manifest" href="manifest.json">
+        <meta name="theme-color" content="#38bdf8">
+    </head>
+
+<body>
+
+    <div class="app">
+        <div class="app-inner">
+            <header>
+                <div class="title-block">
+                    <h1>Time manager</h1>
+                    <div class="subtitle">Sessões de trabalho e descanso para o teu treino</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-dot"></div>
+                    <span> © Jorge Sá</span>
+                </div>
+            </header>
+
+            <section class="config-card">
+                <div class="field">
+                    <label for="reps">Repetições</label>
+                    <input id="reps" type="number" min="1" placeholder="ex: 5">
+                </div>
+                <div class="field">
+                    <label for="work">Trabalho (s)</label>
+                    <input id="work" type="number" min="1" placeholder="ex: 40">
+                </div>
+                <div class="field">
+                    <label for="rest">Descanso (s)</label>
+                    <input id="rest" type="number" min="1" placeholder="ex: 20">
+                </div>
+            </section>
+
+            <div class="hint">
+                Sugestão: valores anteriores são carregados automaticamente.
+            </div>
+
+            <section class="status-card">
+                <div class="status-row">
+                    <div>
+                        <div class="status-label">Estado</div>
+                        <div id="statusMode" class="status-mode idle">Pronto para iniciar</div>
+                    </div>
+                    <div>
+                        <div class="status-label">Repetição</div>
+                        <div id="statusRep" class="status-value">0 / 0</div>
+                    </div>
+                </div>
+
+                <div class="timer-display">
+                    <div class="time-main" id="timerMain">
+                        <span>00</span>:<span>00</span>
+                    </div>
+                    <div class="time-label" id="timerLabel">Tempo restante</div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </section>
+
+            <section class="controls">
+                <button class="btn-primary" id="btnStart">Iniciar</button>
+                <button class="btn-secondary" id="btnPause">Pausar</button>
+                <button class="btn-secondary" id="btnResume">Prosseguir</button>
+                <button class="btn-danger" id="btnReset" style="grid-column: span 3;">Reset</button>
+            </section>
+
+        </div>
+    </div>
+    <script>
+
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("service-worker.js")
+                .then(() => console.log("Service Worker registado"));
+        }
+        // --- AUDIO VIA WEB AUDIO ---
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBeep(frequency = 1200, duration = 0.12, volume = 0.2) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = "sine";
+            osc.frequency.value = frequency;
+            gain.gain.value = volume;
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playEndSequence() {
+            if (!audioCtx) return;
+            // 3 bips
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => playBeep(1400, 0.12, 0.25), i * 200);
+            }
+            // pausa e mais 3 bips
+            setTimeout(() => {
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => playBeep(1400, 0.12, 0.25), i * 200);
+                }
+            }, 900);
+        }
+
+        // --- VARIÁVEIS ---
+        let reps = 0, work = 0, rest = 0;
+        let currentRep = 0;
+        let mode = "idle";
+        let timeLeft = 0;
+        let totalPhaseTime = 0;
+        let intervalId = null;
+
+        // elementos
+        const inputReps = document.getElementById("reps");
+        const inputWork = document.getElementById("work");
+        const inputRest = document.getElementById("rest");
+        const statusModeEl = document.getElementById("statusMode");
+        const statusRepEl = document.getElementById("statusRep");
+        const timerMainEl = document.getElementById("timerMain");
+        const timerLabelEl = document.getElementById("timerLabel");
+        const progressFillEl = document.getElementById("progressFill");
+
+        const btnStart = document.getElementById("btnStart");
+        const btnPause = document.getElementById("btnPause");
+        const btnResume = document.getElementById("btnResume");
+        const btnReset = document.getElementById("btnReset");
+
+        // --- DESBLOQUEIO DE SOM + INICIAR ---
+        btnStart.addEventListener("click", () => {
+            initAudio();
+            playBeep(800, 0.1);
+            requestWakeLock();   // mantém o ecrã ligado
+            startWorkout();
+        });
+
+        // carregar últimos valores
+        (function loadLastValues() {
+            const lastReps = localStorage.getItem("lastReps");
+            const lastWork = localStorage.getItem("lastWork");
+            const lastRest = localStorage.getItem("lastRest");
+
+            if (lastReps) inputReps.value = lastReps;
+            if (lastWork) inputWork.value = lastWork;
+            if (lastRest) inputRest.value = lastRest;
+        })();
+
+        function saveLastValues() {
+            localStorage.setItem("lastReps", reps);
+            localStorage.setItem("lastWork", work);
+            localStorage.setItem("lastRest", rest);
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return {
+                m: String(m).padStart(2, "0"),
+                s: String(s).padStart(2, "0")
+            };
+        }
+
+        function updateTimerDisplay() {
+            const { m, s } = formatTime(timeLeft);
+            timerMainEl.innerHTML = `<span>${m}</span>:<span>${s}</span>`;
+            timerLabelEl.textContent = "Tempo restante";
+
+            const progress = totalPhaseTime > 0
+                ? ((totalPhaseTime - timeLeft) / totalPhaseTime) * 100
+                : 0;
+            progressFillEl.style.width = `${Math.max(0, Math.min(progress, 100))}%`;
+        }
+
+        function updateStatus() {
+            statusRepEl.textContent = `${currentRep} / ${reps}`;
+
+            statusModeEl.classList.remove("work", "rest", "idle");
+            if (mode === "work") {
+                statusModeEl.textContent = "Trabalho";
+                statusModeEl.classList.add("work");
+            } else if (mode === "rest") {
+                statusModeEl.textContent = "Descanso";
+                statusModeEl.classList.add("rest");
+            } else {
+                statusModeEl.textContent = "Pronto para iniciar";
+                statusModeEl.classList.add("idle");
+            }
+        }
+
+        function clearTimer() {
+            if (intervalId !== null) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        }
+
+        function startPhase(newMode) {
+            mode = newMode;
+            totalPhaseTime = (mode === "work") ? work : rest;
+            timeLeft = totalPhaseTime;
+            updateStatus();
+            updateTimerDisplay();
+
+            clearTimer();
+            intervalId = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                // últimos 8 segundos → bip curto
+                if (timeLeft <= 8 && timeLeft > 0) {
+                    playBeep(1000, 0.1, 0.25);
+                }
+
+                if (timeLeft <= 0) {
+                    if (mode === "work" || mode === "rest") {
+                        playEndSequence();
+                    }
+
+                    if (mode === "work") {
+                        if (rest > 0) startPhase("rest");
+                        else nextRepOrFinish();
+                    } else if (mode === "rest") {
+                        nextRepOrFinish();
+                    }
+                }
+            }, 1000);
+        }
+
+        function nextRepOrFinish() {
+            currentRep++;
+            if (currentRep > reps) {
+                clearTimer();
+                mode = "idle";
+                updateStatus();
+                timerLabelEl.textContent = "Treino concluído";
+                progressFillEl.style.width = "100%";
+                return;
+            }
+            startPhase("work");
+        }
+
+        function startWorkout() {
+            const r = parseInt(inputReps.value, 10);
+            const w = parseInt(inputWork.value, 10);
+            const rst = parseInt(inputRest.value, 10);
+
+            if (!r || r <= 0 || !w || w <= 0 || !rst || rst < 0) {
+                alert("Verifica os valores: repetições ≥ 1, trabalho ≥ 1s, descanso ≥ 0s.");
+                return;
+            }
+
+            reps = r;
+            work = w;
+            rest = rst;
+            saveLastValues();
+
+            currentRep = 1;
+            startPhase("work");
+        }
+
+        function pauseTimer() {
+            clearTimer();
+        }
+
+        function resumeTimer() {
+            if (mode === "idle" || timeLeft <= 0) return;
+            clearTimer();
+            intervalId = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 8 && timeLeft > 0) {
+                    playBeep(1000, 0.1, 0.25);
+                }
+
+                if (timeLeft <= 0) {
+                    if (mode === "work" || mode === "rest") {
+                        playEndSequence();
+                    }
+
+                    if (mode === "work") {
+                        if (rest > 0) startPhase("rest");
+                        else nextRepOrFinish();
+                    } else if (mode === "rest") {
+                        nextRepOrFinish();
+                    }
+                }
+            }, 1000);
+        }
+
+        function resetWorkout() {
+            clearTimer();
+            mode = "idle";
+            currentRep = 0;
+            timeLeft = 0;
+            totalPhaseTime = 0;
+            updateStatus();
+            timerMainEl.innerHTML = `<span>00</span>:<span>00</span>`;
+            timerLabelEl.textContent = "Tempo restante";
+            progressFillEl.style.width = "0%";
+        }
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("Proteção de ecrã desativada.");
+                    wakeLock.addEventListener('release', () => {
+                        console.log("Proteção de ecrã voltou a estar ativa.");
+                    });
+                }
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        }
+        // --- LIGAÇÃO DOS BOTÕES ---
+        btnPause.addEventListener("click", pauseTimer);
+        btnResume.addEventListener("click", resumeTimer);
+        btnReset.addEventListener("click", () => {
+            resetWorkout();
+            releaseWakeLock();   // volta a permitir proteção de ecrã
+        });
+    </script>
+</body>
+
+</html>
